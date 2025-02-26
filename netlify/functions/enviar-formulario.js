@@ -1,19 +1,7 @@
 const nodemailer = require('nodemailer');
 
 exports.handler = async (event, context) => {
-    // Manejar solicitudes OPTIONS para CORS
-    if (event.httpMethod === 'OPTIONS') {
-        return {
-            statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-            },
-            body: '',
-        };
-    }
-
+    // Solo permitir solicitudes POST
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -44,19 +32,23 @@ exports.handler = async (event, context) => {
         await transporter.sendMail(mailOptions);
         return {
             statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*', // Permitir peticiones desde cualquier origen
-            },
             body: JSON.stringify({ mensaje: 'Correo enviado correctamente' }),
+            headers: {
+                'Access-Control-Allow-Origin': '*', // Permitir todas las solicitudes CORS
+                'Access-Control-Allow-Methods': 'OPTIONS,POST', // Métodos permitidos
+                'Access-Control-Allow-Headers': 'Content-Type', // Cabeceras permitidas
+            },
         };
     } catch (error) {
         console.error('Error enviando el correo:', error);
         return {
             statusCode: 500,
-            headers: {
-                'Access-Control-Allow-Origin': '*', // Permitir peticiones desde cualquier origen
-            },
             body: JSON.stringify({ error: 'Error al enviar el correo' }),
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            },
         };
     }
 };
