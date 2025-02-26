@@ -1,27 +1,37 @@
-const express = require('express');
-const serverless = require('serverless-http');
 const nodemailer = require('nodemailer');
-const cors = require('cors');
-require('dotenv').config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+exports.handler = async (event, context) => {
+    // Manejar solicitudes OPTIONS para CORS
+    if (event.httpMethod === 'OPTIONS') {
+        return {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            },
+            body: '',
+        };
+    }
 
-// Configuración del transporte SMTP (Microsoft 365)
-const transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER, // Usar variable de entorno
-        pass: process.env.EMAIL_PASS, // Usar variable de entorno
-    },
-});
+    if (event.httpMethod !== 'POST') {
+        return {
+            statusCode: 405,
+            body: JSON.stringify({ error: 'Método no permitido' }),
+        };
+    }
 
-// Ruta para enviar el formulario
-app.post('/enviar-formulario', async (req, res) => {
-    const { nombre, email, mensaje } = req.body;
+    const { nombre, email, mensaje } = JSON.parse(event.body);
+
+    const transporter = nodemailer.createTransport({
+        host: 'smtp.office365.com',
+        port: 587,
+        secure: false,
+        auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+        },
+    });
 
     const mailOptions = {
         from: process.env.EMAIL_USER,
@@ -32,11 +42,21 @@ app.post('/enviar-formulario', async (req, res) => {
 
     try {
         await transporter.sendMail(mailOptions);
-        res.status(200).json({ mensaje: 'Correo enviado correctamente' });
+        return {
+            statusCode: 200,
+            headers: {
+                'Access-Control-Allow-Origin': '*', // Permitir peticiones desde cualquier origen
+            },
+            body: JSON.stringify({ mensaje: 'Correo enviado correctamente' }),
+        };
     } catch (error) {
         console.error('Error enviando el correo:', error);
-        res.status(500).json({ error: 'Error al enviar el correo' });
+        return {
+            statusCode: 500,
+            headers: {
+                'Access-Control-Allow-Origin': '*', // Permitir peticiones desde cualquier origen
+            },
+            body: JSON.stringify({ error: 'Error al enviar el correo' }),
+        };
     }
-});
-
-module.exports.handler = serverless(app);
+};
