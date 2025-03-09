@@ -1,6 +1,7 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
+require('dotenv').config(); // Cargar variables de entorno
 
 const app = express();
 app.use(cors());
@@ -12,8 +13,8 @@ const transporter = nodemailer.createTransport({
     port: 587, // Puerto
     secure: false, // Usar STARTTLS
     auth: {
-        user: 'BrayamLopezMorales@PruebasOMRTech.onmicrosoft.com', // Tu dirección de correo principal
-        pass: 'BrayamLM155478', // Tu contraseña
+        user: process.env.EMAIL_USER, // Usar variable de entorno
+        pass: process.env.EMAIL_PASS, // Usar variable de entorno
     },
 });
 
@@ -21,12 +22,17 @@ const transporter = nodemailer.createTransport({
 app.post('/enviar-formulario', async (req, res) => {
     const { nombre, email, mensaje } = req.body;
 
+    // Validar campos obligatorios
+    if (!nombre || !email || !mensaje) {
+        return res.status(400).json({ error: 'Faltan campos obligatorios' });
+    }
+
     // Configuración del correo
     const mailOptions = {
-        from: 'brayamlopezmorales@pruebasomrtech.onmicrosoft.com', // Usa el alias como remitente
-        to: 'BrayamLopezMorales@PruebasOMRTech.onmicrosoft.com', // Destinatario (tu correo principal)
+        from: process.env.EMAIL_USER, // Remitente
+        to: process.env.EMAIL_USER, // Destinatario
         subject: `Nuevo mensaje de contacto de ${nombre}`, // Asunto
-        text: `Este es un mensaje de prueba enviado desde el alias.\n Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`, // Cuerpo del correo
+        text: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`, // Cuerpo del correo
     };
 
     try {
@@ -40,7 +46,7 @@ app.post('/enviar-formulario', async (req, res) => {
 });
 
 // Iniciar el servidor
-const PORT = 4000; // Puerto para la API
+const PORT = process.env.PORT || 4000; // Puerto para la API
 app.listen(PORT, () => {
     console.log(`Servidor API corriendo en http://localhost:${PORT}`);
 });

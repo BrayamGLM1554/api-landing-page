@@ -11,13 +11,21 @@ exports.handler = async (event, context) => {
 
     const { nombre, email, mensaje } = JSON.parse(event.body);
 
+    // Validar campos obligatorios
+    if (!nombre || !email || !mensaje) {
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ error: 'Faltan campos obligatorios' }),
+        };
+    }
+
     const transporter = nodemailer.createTransport({
         host: 'smtp.office365.com',
         port: 587,
         secure: false,
         auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: process.env.EMAIL_USER, // Usar variable de entorno
+            pass: process.env.EMAIL_PASS, // Usar variable de entorno
         },
     });
 
