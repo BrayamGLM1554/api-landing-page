@@ -20,18 +20,18 @@ exports.handler = async (event, context) => {
     }
 
     const transporter = nodemailer.createTransport({
-        host: 'smtp.office365.com',
-        port: 587,
-        secure: false,
+        host: 'smtp.office365.com', // Servidor SMTP de Microsoft 365
+        port: 587, // Puerto
+        secure: false, // Usar STARTTLS
         auth: {
-            user: process.env.EMAIL_USER, // Usar variable de entorno
-            pass: process.env.EMAIL_PASS, // Usar variable de entorno
+            user: process.env.EMAIL_USER, // Tu dirección de correo
+            pass: process.env.EMAIL_PASS, // Tu contraseña de aplicación
         },
     });
 
     const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: process.env.EMAIL_USER,
+        from: process.env.EMAIL_USER, // Remitente (tu cuenta principal)
+        to: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Destinatario (alias)
         subject: `Nuevo mensaje de contacto de ${nombre}`,
         text: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
     };
