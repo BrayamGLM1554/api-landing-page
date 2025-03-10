@@ -1,52 +1,73 @@
-const express = require('express');
-const nodemailer = require('nodemailer');
-const cors = require('cors');
-require('dotenv').config(); // Cargar variables de entorno
+const axios = require('axios');
+const { ConfidentialClientApplication } = require('@azure/msal-node');
+require('dotenv').config();
 
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Configuración del transporte SMTP (Microsoft 365)
-const transporter = nodemailer.createTransport({
-    host: 'smtp.office365.com', // Servidor SMTP de Microsoft 365
-    port: 587, // Puerto
-    secure: false, // Usar STARTTLS
+// Configuración de Azure AD
+const config = {
     auth: {
-        user: process.env.EMAIL_USER, // Usar variable de entorno
-        pass: process.env.EMAIL_PASS, // Usar variable de entorno
+        clientId: process.env.CLIENT_ID, // ID de la aplicación
+        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`, // Tenant ID
+        clientSecret: process.env.CLIENT_SECRET, // Contraseña de la aplicación
     },
-});
+};
 
-// Endpoint para recibir los datos del formulario y enviar el correo
-app.post('/enviar-formulario', async (req, res) => {
-    const { nombre, email, mensaje } = req.body;
+// Crear una instancia de MSAL
+const cca = new ConfidentialClientApplication(config);
 
-    // Validar campos obligatorios
-    if (!nombre || !email || !mensaje) {
-        return res.status(400).json({ error: 'Faltan campos obligatorios' });
-    }
-
-    // Configuración del correo
-    const mailOptions = {
-        from: process.env.EMAIL_USER, // Remitente
-        to: process.env.EMAIL_USER, // Destinatario
-        subject: `Nuevo mensaje de contacto de ${nombre}`, // Asunto
-        text: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`, // Cuerpo del correo
-    };
-
+// Obtener un nuevo Access Token usando el Refresh Token
+async function getAccessToken() {
     try {
-        // Enviar el correo
-        await transporter.sendMail(mailOptions);
-        res.status(200).json({ mensaje: 'Correo enviado correctamente' });
-    } catch (error) {
-        console.error('Error enviando el correo:', error);
-        res.status(500).json({ error: 'Error al enviar el correo' });
-    }
-});
+        const tokenResponse = await cca.acquireTokenByRefreshToken({
+            refreshToken: process.env.REFRESH_TOKEN,
+            scopes: ['https://graph.microsoft.com/.default'], // Scopes para Microsoft Graph API
+        });
 
-// Iniciar el servidor
-const PORT = process.env.PORT || 4000; // Puerto para la API
-app.listen(PORT, () => {
-    console.log(`Servidor API corriendo en http://localhost:${PORT}`);
-});
+        console.log('Access Token obtenido:', tokenResponse.accessToken);
+        return tokenResponse.accessToken;
+    } catch (error) {
+        console.error('Error al obtener el Access Token:', error);
+        throw error;
+    }
+}
+
+// Enviar un correo usando Microsoft Graph API
+async function sendMail() {
+    try {
+        const accessToken = await getAccessToken();
+
+        const mailOptions = {
+            message: {
+                subject: 'Asunto del correo',
+                body: {
+                    contentType: 'Text',
+                    content: 'Contenido del correo',
+                },
+                toRecipients: [
+                    {
+                        emailAddress: {
+                            address: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Reemplaza con el correo del destinatario
+                        },
+                    },
+                ],
+            },
+        };
+
+        // Enviar el correo usando Microsoft Graph API
+        const response = await axios.post(
+            'https://graph.microsoft.com/v1.0/me/sendMail', // Usar /me para el usuario autenticado
+            mailOptions,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            }
+        );
+
+        console.log('Correo enviado:', response.data);
+    } catch (error) {
+        console.error('Error al enviar el correo:', error.response ? error.response.data : error.message);
+    }
+}
+
+// Llamar a la función para enviar el correo
+sendMail();

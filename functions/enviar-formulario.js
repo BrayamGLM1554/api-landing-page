@@ -1,7 +1,13 @@
 const nodemailer = require('nodemailer');
+const { google } = require('googleapis'); // Necesitas instalar el paquete `googleapis`
+
+const oauth2Client = new google.auth.OAuth2(
+    process.env.CLIENT_ID, // ID de la aplicación
+    process.env.CLIENT_SECRET, // Secreto de cliente
+    process.env.REDIRECT_URI // URI de redirección
+);
 
 exports.handler = async (event, context) => {
-    // Solo permitir solicitudes POST
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -11,7 +17,6 @@ exports.handler = async (event, context) => {
 
     const { nombre, email, mensaje } = JSON.parse(event.body);
 
-    // Validar campos obligatorios
     if (!nombre || !email || !mensaje) {
         return {
             statusCode: 400,
@@ -19,32 +24,38 @@ exports.handler = async (event, context) => {
         };
     }
 
-    const transporter = nodemailer.createTransport({
-        host: 'smtp.office365.com',
-        port: 587,
-        secure: false,
-        auth: {
-            user: process.env.EMAIL_USER, // Usar variable de entorno
-            pass: process.env.EMAIL_PASS, // Usar variable de entorno
-        },
-    });
-
-    const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: process.env.EMAIL_USER,
-        subject: `Nuevo mensaje de contacto de ${nombre}`,
-        text: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
-    };
-
     try {
+        // Obtener el access token de manera dinámica
+        const accessToken = await oauth2Client.getAccessToken();
+        
+        const transporter = nodemailer.createTransport({
+            service: 'outlook',
+            auth: {
+                type: 'OAuth2',
+                user: process.env.EMAIL_USER,
+                clientId: process.env.CLIENT_ID,
+                clientSecret: process.env.CLIENT_SECRET,
+                refreshToken: process.env.REFRESH_TOKEN, // El refresh token sigue siendo necesario para obtener un access token
+                accessToken: accessToken.token, // El access token que se obtuvo dinámicamente
+            },
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER, // Remitente
+            to: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Alias
+            subject: `Nuevo mensaje de contacto de ${nombre}`,
+            text: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
+        };
+
         await transporter.sendMail(mailOptions);
+
         return {
             statusCode: 200,
             body: JSON.stringify({ mensaje: 'Correo enviado correctamente' }),
             headers: {
-                'Access-Control-Allow-Origin': '*', // Permitir todas las solicitudes CORS
-                'Access-Control-Allow-Methods': 'OPTIONS,POST', // Métodos permitidos
-                'Access-Control-Allow-Headers': 'Content-Type', // Cabeceras permitidas
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Headers': 'Content-Type',
             },
         };
     } catch (error) {
