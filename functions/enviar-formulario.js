@@ -1,5 +1,5 @@
-const nodemailer = require('nodemailer');
-const { ConfidentialClientApplication } = require('@azure/msal-node'); // Usamos MSAL para Azure AD
+const axios = require('axios');
+const { ConfidentialClientApplication } = require('@azure/msal-node');
 require('dotenv').config();
 
 // Configuración de Azure AD
@@ -68,29 +68,37 @@ exports.handler = async (event, context) => {
         // Obtener el Access Token
         const accessToken = await getAccessToken();
 
-        // Configurar el transportador de Nodemailer
-        const transporter = nodemailer.createTransport({
-            service: 'outlook',
-            auth: {
-                type: 'OAuth2',
-                user: process.env.EMAIL_USER, // Tu correo de Outlook
-                clientId: process.env.CLIENT_ID,
-                clientSecret: process.env.CLIENT_SECRET,
-                refreshToken: process.env.REFRESH_TOKEN,
-                accessToken: accessToken, // Access Token obtenido dinámicamente
-            },
-        });
-
         // Configurar las opciones del correo
         const mailOptions = {
-            from: process.env.EMAIL_USER, // Remitente
-            to: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Alias
-            subject: `Nuevo mensaje de contacto de ${nombre}`,
-            text: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
+            message: {
+                subject: `Nuevo mensaje de contacto de ${nombre}`,
+                body: {
+                    contentType: 'Text',
+                    content: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
+                },
+                toRecipients: [
+                    {
+                        emailAddress: {
+                            address: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Alias
+                        },
+                    },
+                ],
+            },
         };
 
-        // Enviar el correo
-        await transporter.sendMail(mailOptions);
+        // Enviar el correo usando Microsoft Graph API
+        const response = await axios.post(
+            'https://graph.microsoft.com/v1.0/me/sendMail', // Usar /me para el usuario autenticado
+            mailOptions,
+            {
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            }
+        );
+
+        console.log('Correo enviado:', response.data);
 
         // Respuesta exitosa
         return {
@@ -103,7 +111,7 @@ exports.handler = async (event, context) => {
             },
         };
     } catch (error) {
-        console.error('Error enviando el correo:', error);
+        console.error('Error enviando el correo:', error.response ? error.response.data : error.message);
         return {
             statusCode: 500,
             body: JSON.stringify({ error: 'Error al enviar el correo' }),
