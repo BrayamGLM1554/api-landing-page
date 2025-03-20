@@ -45,7 +45,7 @@ async function sendMail() {
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Reemplaza con el correo del destinatario
+                            address: 'omrtech@omrtech.onmicrosoft.com', // Reemplaza con el correo del destinatario
                         },
                     },
                 ],

@@ -79,7 +79,7 @@ exports.handler = async (event, context) => {
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'Contacto@PruebasOMRTech.onmicrosoft.com', // Alias
+                            address: 'omrtech@omrtech.onmicrosoft.com', // Alias
                         },
                     },
                 ],
