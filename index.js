@@ -32,6 +32,7 @@ async function getAccessToken() {
 
 // Enviar un correo usando Microsoft Graph API
 async function sendMail() {
+    console.log('Token obtenido:', accessToken);
     try {
         const accessToken = await getAccessToken();
 
@@ -54,7 +55,8 @@ async function sendMail() {
 
         // Enviar el correo usando Microsoft Graph API
         const response = await axios.post(
-            'https://graph.microsoft.com/Mail.Send', // Usar /me para el usuario autenticado
+            'https://graph.microsoft.com/v1.0/users/omrtech@omrtech.onmicrosoft.com/sendMail'
+, // Usar /me para el usuario autenticado
             mailOptions,
             {
                 headers: {
@@ -65,7 +67,11 @@ async function sendMail() {
 
         console.log('Correo enviado:', response.data);
     } catch (error) {
-        console.error('Error al enviar el correo:', error.response ? error.response.data : error.message);
+        console.error('Error enviando el correo:', error.response?.data || error.message);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.response?.data || 'Error desconocido al enviar el correo' }),
+        };
     }
 }
 
