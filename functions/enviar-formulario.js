@@ -71,13 +71,13 @@ exports.handler = async (event, context) => {
                 },
                 from: {
                     emailAddress: {
-                        address: process.env.FROM_EMAIL, // Alias o correo del remitente
+                        address: 'Contacto@omrtech.onmicrosoft.com', // Alias o correo del remitente
                     },
                 },
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'Contacto@omrtech.onmicrosoft.com',
+                            address: 'omrtech@omrtech.onmicrosoft.com',
                         },
                     },
                 ],
