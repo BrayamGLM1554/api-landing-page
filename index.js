@@ -5,21 +5,20 @@ require('dotenv').config();
 // Configuración de Azure AD
 const config = {
     auth: {
-        clientId: process.env.CLIENT_ID, // ID de la aplicación
-        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`, // Tenant ID
-        clientSecret: process.env.CLIENT_SECRET, // Contraseña de la aplicación
+        clientId: process.env.CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+        clientSecret: process.env.CLIENT_SECRET,
     },
 };
 
 // Crear una instancia de MSAL
 const cca = new ConfidentialClientApplication(config);
 
-// Obtener un nuevo Access Token usando el Refresh Token
+// Obtener un nuevo Access Token
 async function getAccessToken() {
     try {
-        const tokenResponse = await cca.acquireTokenByRefreshToken({
-            refreshToken: process.env.REFRESH_TOKEN,
-            scopes: ['https://graph.microsoft.com/.default'], // Scopes para Microsoft Graph API
+        const tokenResponse = await cca.acquireTokenByClientCredential({
+            scopes: ['https://graph.microsoft.com/.default'],
         });
 
         console.log('Access Token obtenido:', tokenResponse.accessToken);
@@ -32,16 +31,15 @@ async function getAccessToken() {
 
 // Enviar un correo usando Microsoft Graph API
 async function sendMail() {
-    console.log('Token obtenido:', accessToken);
     try {
-        const accessToken = await getAccessToken();
+        const accessToken = await getAccessToken(); // 🔹 Aquí obtenemos el token correctamente
 
         const mailOptions = {
             message: {
-                subject: `Nuevo mensaje de contacto de ${nombre}`,
+                subject: 'Asunto del correo',
                 body: {
                     contentType: 'Text',
-                    content: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
+                    content: 'Contenido del correo',
                 },
                 from: {
                     emailAddress: {
@@ -51,7 +49,7 @@ async function sendMail() {
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'destinatario@dominio.com', // Reemplaza con el destinatario real
+                            address: 'omrtech@omrtech.onmicrosoft.com', // Reemplaza con el destinatario real
                         },
                     },
                 ],
@@ -72,11 +70,7 @@ async function sendMail() {
 
         console.log('Correo enviado:', response.data);
     } catch (error) {
-        console.error('Error enviando el correo:', error.response?.data || error.message);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: error.response?.data || 'Error desconocido al enviar el correo' }),
-        };
+        console.error('Error al enviar el correo:', error.response ? error.response.data : error.message);
     }
 }
 
