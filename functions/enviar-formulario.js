@@ -16,11 +16,13 @@ const msalConfig = {
 const cca = new ConfidentialClientApplication(msalConfig);
 
 // Función para obtener un Access Token usando el Refresh Token
+// Reemplazo de la llamada con la forma correcta:
 async function getAccessToken() {
     try {
+        // Adquirir el token utilizando el refresh token
         const tokenResponse = await cca.acquireTokenByRefreshToken({
             refreshToken: process.env.REFRESH_TOKEN,
-            scopes: ['https://graph.microsoft.com/.default'], // Scopes para Microsoft Graph API
+            scopes: ['https://graph.microsoft.com/.default'],  // Scopes correctos para el uso de Graph API
         });
 
         console.log('Access Token obtenido:', tokenResponse.accessToken);
@@ -30,6 +32,7 @@ async function getAccessToken() {
         throw error;
     }
 }
+
 
 // Función principal de Netlify
 exports.handler = async (event, context) => {
