@@ -1,4 +1,3 @@
-
 const axios = require('axios');
 const { ConfidentialClientApplication } = require('@azure/msal-node');
 require('dotenv').config();
@@ -6,23 +5,20 @@ require('dotenv').config();
 // Configuración de Azure AD
 const msalConfig = {
     auth: {
-        clientId: process.env.CLIENT_ID, // ID de la aplicación
-        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`, // Tenant ID
-        clientSecret: process.env.CLIENT_SECRET, // Secreto de la aplicación
+        clientId: process.env.CLIENT_ID,
+        authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+        clientSecret: process.env.CLIENT_SECRET,
     },
 };
 
 // Crear una instancia de MSAL
 const cca = new ConfidentialClientApplication(msalConfig);
 
-// Función para obtener un Access Token usando el Refresh Token
-// Reemplazo de la llamada con la forma correcta:
+// Obtener el Access Token
 async function getAccessToken() {
     try {
-        // Adquirir el token utilizando el refresh token
-        const tokenResponse = await cca.acquireTokenByRefreshToken({
-            refreshToken: process.env.REFRESH_TOKEN,
-            scopes: ['https://graph.microsoft.com/.default'],  // Scopes correctos para el uso de Graph API
+        const tokenResponse = await cca.acquireTokenByClientCredential({
+            scopes: ['https://graph.microsoft.com/.default'],
         });
 
         console.log('Access Token obtenido:', tokenResponse.accessToken);
@@ -33,10 +29,8 @@ async function getAccessToken() {
     }
 }
 
-
 // Función principal de Netlify
 exports.handler = async (event, context) => {
-    // Manejar solicitudes CORS
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
@@ -49,7 +43,6 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Solo permitir solicitudes POST
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -57,10 +50,8 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Parsear el cuerpo de la solicitud
     const { nombre, email, mensaje } = JSON.parse(event.body);
 
-    // Validar campos obligatorios
     if (!nombre || !email || !mensaje) {
         return {
             statusCode: 400,
@@ -69,10 +60,8 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        // Obtener el Access Token
         const accessToken = await getAccessToken();
 
-        // Configurar las opciones del correo
         const mailOptions = {
             message: {
                 subject: `Nuevo mensaje de contacto de ${nombre}`,
@@ -80,19 +69,23 @@ exports.handler = async (event, context) => {
                     contentType: 'Text',
                     content: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
                 },
+                from: {
+                    emailAddress: {
+                        address: process.env.FROM_EMAIL, // Alias o correo del remitente
+                    },
+                },
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'Contacto@omrtech.onmicrosoft.com', // Alias
+                            address: 'Contacto@omrtech.onmicrosoft.com',
                         },
                     },
                 ],
             },
         };
 
-        // Enviar el correo usando Microsoft Graph API
         const response = await axios.post(
-            'https://graph.microsoft.com/v1.0/users/omrtech@omrtech.onmicrosoft.com/sendMail', // Usar /me para el usuario autenticado
+            `https://graph.microsoft.com/v1.0/users/${process.env.SENDER_EMAIL}/sendMail`,
             mailOptions,
             {
                 headers: {
@@ -104,7 +97,6 @@ exports.handler = async (event, context) => {
 
         console.log('Correo enviado:', response.data);
 
-        // Respuesta exitosa
         return {
             statusCode: 200,
             body: JSON.stringify({ mensaje: 'Correo enviado correctamente' }),
@@ -114,16 +106,16 @@ exports.handler = async (event, context) => {
                 'Access-Control-Allow-Headers': 'Content-Type',
             },
         };
-    }  catch (error) {
-    console.error('Error enviando el correo:', error.response ? error.response.data : error.message);
-    return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.response ? error.response.data : 'Error desconocido al enviar el correo' }),
-        headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'OPTIONS,POST',
-            'Access-Control-Allow-Headers': 'Content-Type',
-        },
-    };
+    } catch (error) {
+        console.error('Error enviando el correo:', error.response ? error.response.data : error.message);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({ error: error.response ? error.response.data : 'Error desconocido al enviar el correo' }),
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'OPTIONS,POST',
+                'Access-Control-Allow-Headers': 'Content-Type',
+            },
+        };
     }
 };

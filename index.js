@@ -38,15 +38,20 @@ async function sendMail() {
 
         const mailOptions = {
             message: {
-                subject: 'Asunto del correo',
+                subject: `Nuevo mensaje de contacto de ${nombre}`,
                 body: {
                     contentType: 'Text',
-                    content: 'Contenido del correo',
+                    content: `Nombre: ${nombre}\nEmail: ${email}\nMensaje: ${mensaje}`,
+                },
+                from: {
+                    emailAddress: {
+                        address: process.env.FROM_EMAIL, // Alias o correo del remitente
+                    },
                 },
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'omrtech@omrtech.onmicrosoft.com', // Reemplaza con el correo del destinatario
+                            address: 'destinatario@dominio.com', // Reemplaza con el destinatario real
                         },
                     },
                 ],
@@ -55,12 +60,12 @@ async function sendMail() {
 
         // Enviar el correo usando Microsoft Graph API
         const response = await axios.post(
-            'https://graph.microsoft.com/v1.0/users/omrtech@omrtech.onmicrosoft.com/sendMail'
-, // Usar /me para el usuario autenticado
+            `https://graph.microsoft.com/v1.0/users/${process.env.SENDER_EMAIL}/sendMail`,
             mailOptions,
             {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
                 },
             }
         );
