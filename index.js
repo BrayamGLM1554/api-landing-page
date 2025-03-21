@@ -54,7 +54,7 @@ async function sendMail() {
 
         // Enviar el correo usando Microsoft Graph API
         const response = await axios.post(
-            'https://graph.microsoft.com/v1.0/me/sendMail', // Usar /me para el usuario autenticado
+            'https://graph.microsoft.com/Mail.Send', // Usar /me para el usuario autenticado
             mailOptions,
             {
                 headers: {

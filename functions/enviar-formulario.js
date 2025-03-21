@@ -83,7 +83,7 @@ exports.handler = async (event, context) => {
                 toRecipients: [
                     {
                         emailAddress: {
-                            address: 'omrtech@omrtech.onmicrosoft.com', // Alias
+                            address: 'Contacto@omrtech.onmicrosoft.com', // Alias
                         },
                     },
                 ],
@@ -114,16 +114,16 @@ exports.handler = async (event, context) => {
                 'Access-Control-Allow-Headers': 'Content-Type',
             },
         };
-    } catch (error) {
-        console.error('Error enviando el correo:', error.response ? error.response.data : error.message);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ error: 'Error al enviar el correo' }),
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'OPTIONS,POST',
-                'Access-Control-Allow-Headers': 'Content-Type',
-            },
-        };
+    }  catch (error) {
+    console.error('Error enviando el correo:', error.response ? error.response.data : error.message);
+    return {
+        statusCode: 500,
+        body: JSON.stringify({ error: error.response ? error.response.data : 'Error desconocido al enviar el correo' }),
+        headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'OPTIONS,POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        },
+    };
     }
 };
